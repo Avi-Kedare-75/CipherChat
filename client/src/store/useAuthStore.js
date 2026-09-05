@@ -2,12 +2,15 @@ import { create } from 'zustand';
 import { authService } from '../services/authService';
 import { userService } from '../services/userService';
 
+const savedUser = JSON.parse(localStorage.getItem('cipherchat_user') || 'null');
+const savedToken = localStorage.getItem('cipherchat_access_token') || null;
+
 export const useAuthStore = create((set, get) => ({
-  user: JSON.parse(localStorage.getItem('cipherchat_user') || 'null'),
-  accessToken: localStorage.getItem('cipherchat_access_token') || null,
-  isAuthenticated: !!localStorage.getItem('cipherchat_access_token'),
+  user: savedUser,
+  accessToken: savedToken,
+  isAuthenticated: !!savedToken,
   isLoading: false,
-  isInitializing: true,
+  isInitializing: false,
   error: null,
 
   // Initialize auth on page load/refresh
@@ -19,7 +22,6 @@ export const useAuthStore = create((set, get) => ({
     }
 
     try {
-      set({ isInitializing: true });
       const response = await authService.getMe();
       if (response?.data?.user) {
         set({
@@ -30,15 +32,20 @@ export const useAuthStore = create((set, get) => ({
         localStorage.setItem('cipherchat_user', JSON.stringify(response.data.user));
       }
     } catch (err) {
-      console.warn('Auth initialization session expired or invalid');
-      set({
-        user: null,
-        accessToken: null,
-        isAuthenticated: false,
-        isInitializing: false,
-      });
-      localStorage.removeItem('cipherchat_access_token');
-      localStorage.removeItem('cipherchat_user');
+      console.warn('Auth initialization session check:', err.message);
+      // If token expired / 401, clear stored auth
+      if (err.response?.status === 401) {
+        set({
+          user: null,
+          accessToken: null,
+          isAuthenticated: false,
+          isInitializing: false,
+        });
+        localStorage.removeItem('cipherchat_access_token');
+        localStorage.removeItem('cipherchat_user');
+      } else {
+        set({ isInitializing: false });
+      }
     }
   },
 
@@ -56,6 +63,7 @@ export const useAuthStore = create((set, get) => ({
         user,
         accessToken,
         isAuthenticated: true,
+        isInitializing: false,
         isLoading: false,
         error: null,
       });
@@ -83,6 +91,7 @@ export const useAuthStore = create((set, get) => ({
         user,
         accessToken,
         isAuthenticated: true,
+        isInitializing: false,
         isLoading: false,
         error: null,
       });
@@ -131,6 +140,7 @@ export const useAuthStore = create((set, get) => ({
         accessToken: null,
         isAuthenticated: false,
         isLoading: false,
+        isInitializing: false,
         error: null,
       });
     }

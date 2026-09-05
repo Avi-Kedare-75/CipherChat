@@ -1,40 +1,35 @@
 import multer from 'multer';
-import ApiError from '../utils/ApiError.js';
-import { MAX_FILE_SIZE } from '../utils/constants.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
-const storage = multer.memoryStorage();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: MAX_FILE_SIZE, // 50MB
+const uploadDir = path.join(__dirname, '../../uploads');
+
+// Ensure upload directory exists
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
   },
-  fileFilter: (req, file, cb) => {
-    // Allow all common file types
-    const allowedMimes = [
-      // Images
-      'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-      // Videos
-      'video/mp4', 'video/webm', 'video/quicktime',
-      // Audio
-      'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/webm',
-      // Documents
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      'text/plain',
-      'application/zip',
-      'application/x-rar-compressed',
-    ];
-
-    if (allowedMimes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new ApiError(400, 'File type not allowed', 'FILE_TYPE_NOT_ALLOWED'), false);
-    }
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
   },
 });
 
-export default upload;
+export const upload = multer({
+  storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024, // 50MB max file size
+  },
+  fileFilter: (req, file, cb) => {
+    cb(null, true);
+  },
+});

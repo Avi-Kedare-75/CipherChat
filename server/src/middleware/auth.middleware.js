@@ -3,7 +3,7 @@ import User from '../models/User.model.js';
 import ApiError from '../utils/ApiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 
-const authMiddleware = asyncHandler(async (req, res, next) => {
+export const authMiddleware = asyncHandler(async (req, res, next) => {
   let token;
 
   // Check Authorization header first, then cookies
@@ -38,4 +38,5 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
   }
 });
 
+export const protect = authMiddleware;
 export default authMiddleware;

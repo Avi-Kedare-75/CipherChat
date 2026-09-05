@@ -74,7 +74,65 @@ export const initializeSocket = (httpServer) => {
       });
     });
 
-    // ─── Phase 2 event handlers will be added here ───
+    // Chat room joining
+    socket.on('join chat', (room) => {
+      socket.join(room);
+      console.log(`User Joined Room: ${room}`);
+    });
+
+    // Typing indicators
+    socket.on('typing', (room) => socket.in(room).emit('typing', room));
+    socket.on('stop typing', (room) => socket.in(room).emit('stop typing', room));
+
+    // New message broadcast
+    socket.on('new message', (newMessageReceived) => {
+      const chat = newMessageReceived.chatId;
+      if (!chat || !chat.participants) return;
+
+      chat.participants.forEach((user) => {
+        const participantId = user._id ? user._id.toString() : user.toString();
+        if (participantId === socket.userId) return;
+
+        socket.in(participantId).emit('message received', newMessageReceived);
+      });
+    });
+
+    // Message reaction broadcast
+    socket.on('message reaction', (updatedMessage) => {
+      const chat = updatedMessage.chatId;
+      if (!chat || !chat.participants) return;
+
+      chat.participants.forEach((user) => {
+        const participantId = user._id ? user._id.toString() : user.toString();
+        socket.in(participantId).emit('message reacted', updatedMessage);
+      });
+    });
+
+    // Message delete broadcast
+    socket.on('message deleted', (deletedMessage) => {
+      const chat = deletedMessage.chatId;
+      if (!chat || !chat.participants) return;
+
+      chat.participants.forEach((user) => {
+        const participantId = user._id ? user._id.toString() : user.toString();
+        socket.in(participantId).emit('message deleted', deletedMessage);
+      });
+    });
+
+    // Group updated broadcast
+    socket.on('group updated', (updatedGroup) => {
+      if (!updatedGroup || !updatedGroup.participants) return;
+
+      updatedGroup.participants.forEach((user) => {
+        const participantId = user._id ? user._id.toString() : user.toString();
+        socket.in(participantId).emit('group updated', updatedGroup);
+      });
+    });
+
+    // Message read receipts
+    socket.on('message read', ({ messageId, chatId, senderId }) => {
+      socket.in(senderId).emit('message read', { messageId, chatId });
+    });
   });
 
   console.log('✅ Socket.IO initialized');

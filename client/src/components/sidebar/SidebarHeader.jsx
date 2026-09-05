@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useUIStore } from '../../store/useUIStore';
+import { useChatStore } from '../../store/useChatStore';
 import { Avatar } from '../common/Avatar';
 import {
   MessageSquarePlus,
@@ -23,6 +24,7 @@ export const SidebarHeader = () => {
     toggleTheme,
   } = useUIStore();
 
+  const { setIsCreateGroupOpen } = useChatStore();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -92,6 +94,17 @@ export const SidebarHeader = () => {
 
           {isMenuOpen && (
             <div className="absolute right-0 top-12 w-52 bg-dark-panel border border-white/10 rounded-2xl shadow-2xl py-1.5 z-50 animate-slide-up">
+              <button
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  setIsCreateGroupOpen(true);
+                }}
+                className="w-full px-4 py-2.5 text-xs text-dark-textPrimary hover:bg-white/5 flex items-center gap-3 transition-colors text-left"
+              >
+                <MessageSquarePlus className="w-4 h-4 text-cipher-400" />
+                <span>New Group</span>
+              </button>
+
               <button
                 onClick={() => {
                   setIsMenuOpen(false);

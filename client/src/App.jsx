@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/useAuthStore';
+import { useSocketStore } from './store/useSocketStore';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Register } from './pages/Register';
@@ -9,11 +10,20 @@ import { NotFound } from './pages/NotFound';
 import { Toaster } from 'react-hot-toast';
 
 export function App() {
-  const { initializeAuth, isAuthenticated } = useAuthStore();
+  const { initializeAuth, isAuthenticated, accessToken } = useAuthStore();
+  const { connect, disconnect } = useSocketStore();
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      connect(accessToken);
+    } else {
+      disconnect();
+    }
+  }, [isAuthenticated, accessToken, connect, disconnect]);
 
   return (
     <>

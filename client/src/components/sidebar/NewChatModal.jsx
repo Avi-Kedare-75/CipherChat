@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 
 export const NewChatModal = () => {
   const { isNewChatModalOpen, setNewChatModalOpen, setShowMobileChat } = useUIStore();
-  const { setSelectedContact } = useChatStore();
+  const { accessOrCreateChat } = useChatStore();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -39,20 +39,24 @@ export const NewChatModal = () => {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const handleSelectUser = (user) => {
-    setSelectedContact(user);
-    setNewChatModalOpen(false);
-    setShowMobileChat(true);
-    setSearchQuery('');
-    setSearchResults([]);
-    toast.success(`Encrypted channel opened with ${user.fullName}`, {
-      icon: '🔐',
-      style: {
-        background: '#202c33',
-        color: '#e9edef',
-        border: '1px solid #10b981',
-      },
-    });
+  const handleSelectUser = async (user) => {
+    try {
+      await accessOrCreateChat(user._id);
+      setNewChatModalOpen(false);
+      setShowMobileChat(true);
+      setSearchQuery('');
+      setSearchResults([]);
+      toast.success(`Encrypted channel opened with ${user.fullName}`, {
+        icon: '🔐',
+        style: {
+          background: '#202c33',
+          color: '#e9edef',
+          border: '1px solid #10b981',
+        },
+      });
+    } catch (error) {
+      toast.error('Failed to open chat');
+    }
   };
 
   return (
